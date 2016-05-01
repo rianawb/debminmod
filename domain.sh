@@ -83,26 +83,26 @@ function reload_webserver {
 function php_fpm_add_user {
 
     # Copy over FPM template for this Linux user if it doesn't exist
-    if [ ! -e /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf ]; then
-        cp /etc/php5/fpm/pool.d/{www.conf,$DOMAIN_OWNER.conf}
+    if [ ! -e /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf ]; then
+        cp /etc/php/7.0/fpm/pool.d/{www.conf,$DOMAIN_OWNER.conf}
 
         # Change pool user, group and socket to the domain owner
-        sed -i 's/^\[www\]$/\['${DOMAIN_OWNER}'\]/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^listen =.*/listen = \/var\/run\/php5-fpm-'${DOMAIN_OWNER}'.sock/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^user = www-data$/user = '${DOMAIN_OWNER}'/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^group = www-data$/group = '${DOMAIN_OWNER}'/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^;listen.mode =.*/listen.mode = 0660/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^\[www\]$/\['${DOMAIN_OWNER}'\]/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^listen =.*/listen = \/var\/run\/php5-fpm-'${DOMAIN_OWNER}'.sock/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^user = www-data$/user = '${DOMAIN_OWNER}'/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^group = www-data$/group = '${DOMAIN_OWNER}'/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^;listen.mode =.*/listen.mode = 0660/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
 
        if [ $USE_NGINX_ORG_REPO = "yes" ]; then
-            sed -i 's/^;listen.owner =.*/listen.owner = nginx/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
-            sed -i 's/^;listen.group =.*/listen.group = nginx/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
+            sed -i 's/^;listen.owner =.*/listen.owner = nginx/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+            sed -i 's/^;listen.group =.*/listen.group = nginx/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
         else
-            sed -i 's/^;listen.owner =.*/listen.owner = www-data/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
-            sed -i 's/^;listen.group =.*/listen.group = www-data/' /etc/php5/fpm/pool.d/$DOMAIN_OWNER.conf
+            sed -i 's/^;listen.owner =.*/listen.owner = www-data/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+            sed -i 's/^;listen.group =.*/listen.group = www-data/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
         fi
     fi
 
-    service php5-fpm restart
+    service php7.0-fpm restart
 
 } # End function php_fpm_add_user
 
@@ -116,10 +116,10 @@ function add_domain {
     cat > $DOMAIN_PATH/public_html/index.html <<EOF
 <html>
 <head>
-<title>Welcome to $DOMAIN</title>
+<title>$DOMAIN</title>
 </head>
 <body>
-<h1>Welcome to $DOMAIN</h1>
+<h1>$DOMAIN</h1>
 <p>This page is simply a placeholder for your domain. Place your content in the appropriate directory to see it here. </p>
 <p>Please replace or delete index.html when uploading or creating your site.</p>
 </body>
@@ -168,7 +168,7 @@ server {
         # Pass PHP scripts to PHP-FPM
         location ~ \.php$ {
             try_files \$uri =403;
-            fastcgi_pass unix:/var/run/php5-fpm-$DOMAIN_OWNER.sock;
+            fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
             include fastcgi_params;
             fastcgi_index index.php;
             fastcgi_param SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
@@ -218,7 +218,7 @@ server {
 
         location ~ \.php$ {
             try_files \$uri =403;
-            fastcgi_pass unix:/var/run/php5-fpm-$DOMAIN_OWNER.sock;
+            fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
             include fastcgi_params;
             fastcgi_index index.php;
             fastcgi_param SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
@@ -297,18 +297,6 @@ EOF
 EOF
     fi # End if $WEBSERVER -eq 1
 
-    if [ $AWSTATS_ENABLE = 'yes' ]; then
-        # Configure Awstats for domain
-        cp /etc/awstats/awstats.conf /etc/awstats/awstats.$DOMAIN.conf
-        sed -i 's/^SiteDomain=.*/SiteDomain="'${DOMAIN}'"/' /etc/awstats/awstats.$DOMAIN.conf
-        sed -i 's/^LogFile=.*/\#Deleted LogFile parameter. Appended at the bottom of this config file instead./' /etc/awstats/awstats.$DOMAIN.conf
-        sed -i 's/^LogFormat=.*/LogFormat=1/' /etc/awstats/awstats.$DOMAIN.conf
-        sed -i 's/^DirData=.*/\#Deleted DirData parameter. Appended at the bottom of this config file instead./' /etc/awstats/awstats.$DOMAIN.conf
-        sed -i 's/^DirIcons=.*/DirIcons=".\/awstats-icon"/' /etc/awstats/awstats.$DOMAIN.conf
-        sed -i '/Include \"\/etc\/awstats\/awstats\.conf\.local\"/ d' /etc/awstats/awstats.$DOMAIN.conf
-        echo "LogFile=\"$DOMAIN_PATH/logs/access.log\"" >> /etc/awstats/awstats.$DOMAIN.conf
-        echo "DirData=\"$DOMAIN_PATH/awstats/.data\"" >> /etc/awstats/awstats.$DOMAIN.conf
-    fi
 
     # Add new logrotate entry for domain
     cat > /etc/logrotate.d/$LOGROTATE_FILE <<EOF
