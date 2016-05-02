@@ -2,8 +2,8 @@
 ######################################################################
 # TuxLite virtualhost script                                         #
 # Easily add/remove domains or subdomains                            #
-# Configures logrotate, AWStats and PHP7.0-FPM                         #
-# Enables/disables public viewing of AWStats and Adminer/phpMyAdmin  #
+# Configures logrotate and PHP7.0-FPM                         #
+# Enables/disables Adminer/phpMyAdmin  #
 ######################################################################
 
 source ./options.conf
@@ -25,15 +25,10 @@ fi
 
 
 # Logrotate Postrotate for Nginx
-# From options.conf, nginx = 1, apache = 2
-if [ $WEBSERVER -eq 1 ]; then
-    POSTROTATE_CMD='[ ! -f /var/run/nginx.pid ] || kill -USR1 `cat /var/run/nginx.pid`'
-else
-    POSTROTATE_CMD='/etc/init.d/apache2 reload > /dev/null'
-fi
+POSTROTATE_CMD='[ ! -f /var/run/nginx.pid ] || kill -USR1 `cat /var/run/nginx.pid`'
 
-# Variables for AWStats/Adminer|phpMyAdmin functions
-# The path to find for Adminer|phpMyAdmin and Awstats symbolic links
+# Variables for Adminer|phpMyAdmin functions
+# The path to find for Adminer|phpMyAdmin symbolic links
 PUBLIC_HTML_PATH="/home/*/domains/*/public_html"
 VHOST_PATH="/home/*/domains/*"
 
@@ -46,21 +41,8 @@ function initialize_variables {
     DOMAIN_PATH="/home/$DOMAIN_OWNER/domains/$DOMAIN"
     GIT_PATH="/home/$DOMAIN_OWNER/repos/$DOMAIN.git"
 
-    # From options.conf, nginx = 1, apache = 2
-    if [ $WEBSERVER -eq 1 ]; then
-        DOMAIN_CONFIG_PATH="/etc/nginx/sites-available/$DOMAIN"
-        DOMAIN_ENABLED_PATH="/etc/nginx/sites-enabled/$DOMAIN"
-    else
-        DOMAIN_CONFIG_PATH="/etc/apache2/sites-available/$DOMAIN"
-        DOMAIN_ENABLED_PATH="/etc/apache2/sites-enabled/$DOMAIN"
-    fi
-
-    # Awstats command to be placed in logrotate file
-    if [ $AWSTATS_ENABLE = 'yes' ]; then
-        AWSTATS_CMD="/usr/share/awstats/tools/awstats_buildstaticpages.pl -update -config=$DOMAIN -dir=$DOMAIN_PATH/awstats -awstatsprog=/usr/lib/cgi-bin/awstats.pl > /dev/null"
-    else
-        AWSTATS_CMD=""
-    fi
+    DOMAIN_CONFIG_PATH="/etc/nginx/sites-available/$DOMAIN"
+    DOMAIN_ENABLED_PATH="/etc/nginx/sites-enabled/$DOMAIN"
 
     # Name of the logrotate file
     LOGROTATE_FILE="domain-$DOMAIN"
@@ -70,12 +52,7 @@ function initialize_variables {
 
 function reload_webserver {
 
-    # From options.conf, nginx = 1, apache = 2
-    if [ $WEBSERVER -eq 1 ]; then
-        service nginx reload
-    else
-        apache2ctl graceful
-    fi
+    service nginx reload
 
 } # End function reload_webserver
 
@@ -93,13 +70,9 @@ function php_fpm_add_user {
         sed -i 's/^group = www-data$/group = '${DOMAIN_OWNER}'/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
         sed -i 's/^;listen.mode =.*/listen.mode = 0666/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
 
-       if [ $USE_NGINX_ORG_REPO = "yes" ]; then
-            sed -i 's/^;listen.owner =.*/listen.owner = nginx/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-            sed -i 's/^;listen.group =.*/listen.group = nginx/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-        else
-            sed -i 's/^;listen.owner =.*/listen.owner = www-data/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-            sed -i 's/^;listen.group =.*/listen.group = www-data/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-        fi
+        sed -i 's/^;listen.owner =.*/listen.owner = nginx/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^;listen.group =.*/listen.group = nginx/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+
     fi
 
     service php7.0-fpm restart
@@ -126,17 +99,6 @@ function add_domain {
 </html>
 EOF
 
-    # Setup awstats directories
-    if [ $AWSTATS_ENABLE = 'yes' ]; then
-        mkdir -p $DOMAIN_PATH/{awstats,awstats/.data}
-        cd $DOMAIN_PATH/awstats/
-        # Create a symbolic link to awstats generated report named index.html
-        ln -s awstats.$DOMAIN.html index.html
-        # Create link to the icons folder so that reports icons can be loaded
-        ln -s /usr/share/awstats/icon awstats-icon
-        cd - &> /dev/null
-    fi
-
     # Set permissions
     chown $DOMAIN_OWNER:$DOMAIN_OWNER $DOMAINS_FOLDER
     chown -R $DOMAIN_OWNER:$DOMAIN_OWNER $DOMAIN_PATH
@@ -145,10 +107,8 @@ EOF
     chmod 711 $DOMAIN_PATH
 
     # Virtualhost entry
-    # From options.conf, nginx = 1, apache = 2
-    if [ $WEBSERVER -eq 1 ]; then
-        # Nginx webserver. Use Nginx vHost config
-        cat > $DOMAIN_CONFIG_PATH <<EOF
+    # Nginx webserver. Use Nginx vHost config
+    cat > $DOMAIN_CONFIG_PATH <<EOF
 server {
         listen 80;
         #listen [::]:80 default ipv6only=on;
@@ -251,53 +211,7 @@ server {
         location = /robots.txt  { log_not_found off; access_log off; }
 }
 EOF
-    else # Use Apache vHost config
-        cat > $DOMAIN_CONFIG_PATH <<EOF
-<VirtualHost *:80>
 
-    ServerName $DOMAIN
-    ServerAlias www.$DOMAIN
-    ServerAdmin admin@$DOMAIN
-    DocumentRoot $DOMAIN_PATH/public_html/
-    ErrorLog $DOMAIN_PATH/logs/error.log
-    CustomLog $DOMAIN_PATH/logs/access.log combined
-
-    FastCGIExternalServer $DOMAIN_PATH/php5-fpm -pass-header Authorization -idle-timeout 120 -socket /var/run/php5-fpm-$DOMAIN_OWNER.sock
-    Alias /php5-fcgi $DOMAIN_PATH
-
-</VirtualHost>
-
-
-<IfModule mod_ssl.c>
-<VirtualHost *:443>
-
-    ServerName $DOMAIN
-    ServerAlias www.$DOMAIN
-    ServerAdmin admin@$DOMAIN
-    DocumentRoot $DOMAIN_PATH/public_html/
-    ErrorLog $DOMAIN_PATH/logs/error.log
-    CustomLog $DOMAIN_PATH/logs/access.log combined
-
-    # With PHP5-FPM, you need to create another PHP5-FPM pool for SSL connections
-    # Adding the same fastcgiexternalserver line here will result in an error
-    Alias /php5-fcgi $DOMAIN_PATH
-
-    SSLEngine on
-    SSLCertificateFile    /etc/ssl/localcerts/webserver.pem
-    SSLCertificateKeyFile /etc/ssl/localcerts/webserver.key
-    SSLProtocol           all -SSLv3 -SSLv2
-
-    <FilesMatch "\.(cgi|shtml|phtml|php)$">
-        SSLOptions +StdEnvVars
-    </FilesMatch>
-
-    BrowserMatch "MSIE [2-6]" nokeepalive ssl-unclean-shutdown downgrade-1.0 force-response-1.0
-    BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
-
-</VirtualHost>
-</IfModule>
-EOF
-    fi # End if $WEBSERVER -eq 1
 
 
     # Add new logrotate entry for domain
@@ -312,13 +226,14 @@ $DOMAIN_PATH/logs/*.log {
     create 0660 $DOMAIN_OWNER $DOMAIN_OWNER
     sharedscripts
     prerotate
-        $AWSTATS_CMD
+
     endscript
     postrotate
         $POSTROTATE_CMD
     endscript
 }
 EOF
+
     # Enable domain from sites-available to sites-enabled
     ln -s $DOMAIN_CONFIG_PATH $DOMAIN_ENABLED_PATH
 
@@ -357,11 +272,6 @@ function remove_domain {
     reload_webserver
 
     # Then delete all files and config files
-    if [ $AWSTATS_ENABLE = 'yes' ]; then
-        echo -e "* Removing awstats config: \033[1m/etc/awstats/awstats.$DOMAIN.conf\033[0m"
-        sleep 1
-        rm -rf /etc/awstats/awstats.$DOMAIN.conf
-    fi
 
     echo -e "* Removing domain files: \033[1m$DOMAIN_PATH\033[0m"
     sleep 1
@@ -415,41 +325,6 @@ function check_domain_valid {
 } # End function check_domain_valid
 
 
-function awstats_on {
-
-    # Search virtualhost directory to look for "stats". In case the user created a stats folder, we do not want to overwrite it.
-    stats_folder=`find $PUBLIC_HTML_PATH -maxdepth 1 -name "stats" -print0 | xargs -0 -I path echo path | wc -l`
-
-    # If no stats folder found, find all available public_html folders and create symbolic link to the awstats folder
-    if [ $stats_folder -eq 0 ]; then
-        find $VHOST_PATH -maxdepth 1 -name "public_html" -type d | xargs -L1 -I path ln -sv ../awstats path/stats
-        echo -e "\033[35;1mAwstats enabled.\033[0m"
-    else
-        echo -e "\033[35;1mERROR: Failed to enable AWStats for all domains. \033[0m"
-        echo -e "\033[35;1mERROR: AWStats is already enabled for at least 1 domain. \033[0m"
-        echo -e "\033[35;1mERROR: Turn AWStats off again before re-enabling. \033[0m"
-        echo -e "\033[35;1mERROR: Also ensure that all your public_html(s) do not have a manually created \"stats\" folder. \033[0m"
-    fi
-
-} # End function awstats_on
-
-
-function awstats_off {
-
-    # Search virtualhost directory to look for "stats" symbolic links
-    find $PUBLIC_HTML_PATH -maxdepth 1 -name "stats" -type l -print0 | xargs -0 -I path echo path > /tmp/awstats.txt
-
-    # Remove symbolic links
-    while read LINE; do
-        rm -rfv $LINE
-    done < "/tmp/awstats.txt"
-    rm -rf /tmp/awstats.txt
-
-    echo -e "\033[35;1mAwstats disabled. If you do not see any \"removed\" messages, it means it has already been disabled.\033[0m"
-
-} # End function awstats_off
-
-
 function dbgui_on {
 
     # Search virtualhost directory to look for "dbgui". In case the user created a "dbgui" folder, we do not want to overwrite it.
@@ -493,7 +368,7 @@ if [ ! -n "$1" ]; then
     echo -e "\033[35;1mSelect from the options below to use this script:- \033[0m"
     echo -n  "$0"
     echo -ne "\033[36m add user Domain.tld\033[0m"
-    echo     " - Add specified domain to \"user's\" home directory. AWStats(optional) and log rotation will be configured."
+    echo     " - Add specified domain to \"user's\" home directory. Log rotation will be configured."
 
     echo -n  "$0"
     echo -ne "\033[36m rem user Domain.tld\033[0m"
@@ -502,10 +377,6 @@ if [ ! -n "$1" ]; then
     echo -n  "$0"
     echo -ne "\033[36m dbgui on|off\033[0m"
     echo     " - Disable or enable public viewing of Adminer or phpMyAdmin."
-
-    echo -n  "$0"
-    echo -ne "\033[36m stats on|off\033[0m"
-    echo     " - Disable or enable public viewing of AWStats."
 
     echo ""
     exit 0
@@ -554,8 +425,6 @@ add)
     echo -e "\033[35;1mSuccesfully added \"${DOMAIN}\" to user \"${DOMAIN_OWNER}\" \033[0m"
     echo -e "\033[35;1mYou can now upload your site to $DOMAIN_PATH/public_html.\033[0m"
     echo -e "\033[35;1mAdminer/phpMyAdmin is DISABLED by default. URL = http://$DOMAIN/dbgui.\033[0m"
-    echo -e "\033[35;1mAWStats is DISABLED by default. URL = http://$DOMAIN/stats.\033[0m"
-    echo -e "\033[35;1mStats update daily. Allow 24H before viewing stats or you will be greeted with an error page. \033[0m"
     echo -e "\033[35;1mIf Varnish cache is enabled, please disable & enable it again to reconfigure this domain. \033[0m"
     ;;
 rem)
@@ -593,13 +462,6 @@ dbgui)
         dbgui_on
     elif [ "$2" = "off" ]; then
         dbgui_off
-    fi
-    ;;
-stats)
-    if [ "$2" = "on" ]; then
-        awstats_on
-    elif [ "$2" = "off" ]; then
-        awstats_off
     fi
     ;;
 esac
