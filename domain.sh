@@ -172,7 +172,7 @@ server {
             include fastcgi_params;
             fastcgi_index index.php;
             fastcgi_param SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
-            fastcgi_param PHP_ADMIN_VALUE  open_basedir=\$document_root/:/tmp/:/usr/local/share/phpmyadmin/;
+            fastcgi_param PHP_ADMIN_VALUE  open_basedir=\$document_root/:/tmp/:/usr/local/share/phpmyadmin/:/usr/local/share/adminer/;
         }
 
         # Enable browser cache for CSS / JS
@@ -223,7 +223,7 @@ server {
             include fastcgi_params;
             fastcgi_index index.php;
             fastcgi_param SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
-            fastcgi_param PHP_ADMIN_VALUE  open_basedir=\$document_root/:/tmp/:/usr/local/share/phpmyadmin/;
+            fastcgi_param PHP_ADMIN_VALUE  open_basedir=\$document_root/:/tmp/:/usr/local/share/phpmyadmin/:/usr/local/share/adminer/;
         }
 
         # Enable browser cache for CSS / JS
