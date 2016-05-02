@@ -1,6 +1,6 @@
 ###############################################################################################
 # TuxLite - Complete LNMP/LAMP setup script for Debian/Ubuntu                                 #
-# Nginx/Apache + PHP7.0-FPM + MySQL                                                             #
+# Nginx + PHP7.0-FPM + MySQL                                                             #
 # Stack is optimized/tuned for a 256MB server                                                 #
 # Email your questions to s@tuxlite.com                                                       #
 ###############################################################################################
@@ -191,9 +191,7 @@ EOF
 
 function install_webserver {
 
-    # From options.conf, nginx = 1, apache = 2
-    if [ $WEBSERVER = 1 ]; then
-        aptitude -y install nginx
+   aptitude -y install nginx
 
         if  [ $USE_NGINX_ORG_REPO = "yes" ]; then
             mkdir /etc/nginx/sites-available
@@ -226,22 +224,6 @@ ssl_ciphers HIGH:!aNULL:!MD5;
 ssl_prefer_server_ciphers on;
 EOF
 
-    else
-        aptitude -y install libapache2-mod-fastcgi apache2-mpm-event
-
-        a2dismod php4
-        a2dismod php5
-        a2dismod fcgid
-        a2enmod actions
-        a2enmod fastcgi
-        a2enmod ssl
-        a2enmod rewrite
-
-        cat ./config/fastcgi.conf > /etc/apache2/mods-available/fastcgi.conf
-
-        # Create the virtual directory for the external server
-        mkdir -p /srv/www/fcgi-bin.d
-    fi
 
 } # End function install_webserver
 
@@ -256,10 +238,6 @@ function install_php {
 
 
 function install_extras {
-
-    if [ $AWSTATS_ENABLE = 'yes' ]; then
-        aptitude -y install awstats
-    fi
 
     # Install any other packages specified in options.conf
     aptitude -y install $MISC_PACKAGES
@@ -317,8 +295,7 @@ function install_mysql {
 function optimize_stack {
 
     # If using Nginx, copy over nginx.conf
-    if [ $WEBSERVER = 1 ]; then
-        cat ./config/nginx.conf > /etc/nginx/nginx.conf
+   cat ./config/nginx.conf > /etc/nginx/nginx.conf
 
         # Change nginx user from  "www-data" to "nginx". Not really necessary
         # because "www-data" user is created when installing PHP7.0-FPM
@@ -330,31 +307,6 @@ function optimize_stack {
         nginx_file=`find /etc/logrotate.d/ -maxdepth 1 -name "nginx*"`
         sed -i 's/\trotate .*/\trotate 10/' $nginx_file
 
-    # If using Apache, copy over apache2.conf
-    else
-        cat ./config/apache2.conf > /etc/apache2/apache2.conf
-
-        # Change logrotate for Apache2 log files to keep 10 days worth of logs
-        sed -i 's/\tweekly/\tdaily/' /etc/logrotate.d/apache2
-        sed -i 's/\trotate .*/\trotate 10/' /etc/logrotate.d/apache2
-
-        # Remove Apache server information from headers.
-        sed -i 's/ServerTokens .*/ServerTokens Prod/' /etc/apache2/conf.d/security
-        sed -i 's/ServerSignature .*/ServerSignature Off/' /etc/apache2/conf.d/security
-
-        # Add *:443 to ports.conf
-        cat ./config/apache2_ports.conf > /etc/apache2/ports.conf
-    fi
-
-    if [ $AWSTATS_ENABLE = 'yes' ]; then
-        # Configure AWStats
-        temp=`grep -i sitedomain /etc/awstats/awstats.conf.local | wc -l`
-        if [ $temp -lt 1 ]; then
-            echo SiteDomain="$HOSTNAME_FQDN" >> /etc/awstats/awstats.conf.local
-        fi
-        # Disable Awstats from executing every 10 minutes. Put a hash in front of any line.
-        sed -i 's/^[^#]/#&/' /etc/cron.d/awstats
-    fi
 
     service php7.0-fpm stop
     php_fpm_conf="/etc/php/7.0/fpm/pool.d/www.conf"
@@ -585,12 +537,7 @@ function secure_tmp_dd {
 
 function restart_webserver {
 
-    # From options.conf, nginx = 1, apache = 2
-    if [ $WEBSERVER = 1 ]; then
         service nginx restart
-    else
-        apache2ctl graceful
-    fi
 
 } # End function restart_webserver
 
@@ -620,7 +567,7 @@ if [ ! -n "$1" ]; then
 
     echo -n "$0"
     echo -ne "\033[36m optimize\033[0m"
-    echo     " - Optimizes webserver.conf, php.ini, AWStats & logrotate. Also generates self signed SSL certs."
+    echo     " - Optimizes webserver.conf, php.ini & logrotate. Also generates self signed SSL certs."
 
     echo -n "$0"
     echo -ne "\033[36m dbgui\033[0m"
