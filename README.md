@@ -1,25 +1,30 @@
-### TuxLite Fork Readme
+### Debminmod | TuxLite Fork Readme
 
-PHP7 fork. DO NOT USE AT PRODUCTION!
+Nginx + PHP7 fork. 
 
-TuxLite is a free collection of shell scripts for rapid deployment of
-LAMP and LNMP stacks (Linux, Apache/Nginx, MySQL and PHP) for Debian and
+Removed Apache, Awstats.
+PHP version is 7 (7.0.6).
+Uses Dotdeb repository for Debian install.
+Ubuntu is not tested currently.
+
+Debminmod is a free collection of shell scripts for rapid deployment of
+LNMP stacks (Linux, Nginx, MySQL and PHP) for Debian and
 Ubuntu. 
 
 Have you considered upgrading from shared hosting to a VPS or dedicated
 server but held off by the costly control panel licenses, or the fear of
 managing a Linux server? Now you can leave those worries behind!
 
-TuxLite scripts automate configuration of servers for web hosting,
+Debminmod scripts automate configuration of servers for web hosting,
 so your websites can be online within minutes! Ideal for those who
 prefer hosting sites on their own server without resorting to expensive
 and bloated control panels.
 
 The following are installed:-
 
--   Apache2 with mpm\_event or Nginx
+-   Nginx (Mainline)
 -   MySQL, MariaDB or Percona
--   PHP-FPM + commonly used PHP modules
+-   PHP7.0-FPM + commonly used PHP modules
 -   Postfix mail server (securely configured to be outgoing only)
 -   Varnish cache (optional)
 
@@ -36,8 +41,8 @@ kindly refer to these links:-
 
     # Install git and clone TuxLite
     aptitude install git
-    git clone https://github.com/Mins/TuxLite.git
-    cd TuxLite
+    git clone https://github.com/isolms/debminmod.git
+    cd debminmod
     
     # Edit options to enter server IP, MySQL password etc.
     nano options.conf
@@ -63,7 +68,7 @@ kindly refer to these links:-
 
 ### Requirements
 
--   Supports Debian 6 and 7, Ubuntu 12.04, 12.10 and 13.04.
+-   Supports Debian 8 and maybe Ubuntu 14, 15 (not tested).
 -   A server with at least 80MB RAM. 256MB and above recommended.
 -   Basic Linux knowledge. You will need know how to connect to your
     server remotely.
@@ -73,19 +78,18 @@ kindly refer to these links:-
 If this is your first time with a Linux server, I suggest spending a day
 reading the "getting started" tutorials in Linode Library.
 
-### Why use TuxLite?
+### Why use Debminmod?
 
--   TuxLite LAMP stack configures Apache with mpm\_event and PHP with
+-   Debminmod LNMP stack configures Nginx and PHP with
     fastcgi (PHP-FPM). This gives much higher performance and lower memory
-    consumption than the regular LAMP tutorials/guides using mod\_php.
+    consumption than the regular LNMP tutorials/guides using mod\_php.
 -   Uses official distribution packages. You are not at the mercy of the
     script maintainer to keep your servers updated. All installed
     software are tuned, optimized and secured.
 -   Minimal resource usage. Fresh install requires only 50-60MB RAM.
 -   Free from unnecessary or custom changes to your server. Everything
     is configured according to Debian/Ubuntu standards.
--   Automatic virtualhost configuration with log rotation, AWStats
-    traffic statistics and phpMyAdmin for managing MySQL.
+-   Automatic virtualhost configuration with log rotationand phpMyAdmin for managing MySQL.
 -   Varnish cache script included to turbo charge your websites.
 -   Free and open source! Coded in a human readable manner and
     modular, making custom modifications extremely easy.
