@@ -294,8 +294,12 @@ function install_mysql {
 
 function optimize_stack {
 
-    # If using Nginx, copy over nginx.conf
+    # If using Nginx, copy over nginx conf files
    cat ./config/nginx.conf > /etc/nginx/nginx.conf
+   cat ./config/nginx.conf > /etc/nginx/allphp.conf
+   cat ./config/nginx.conf > /etc/nginx/block.conf
+   cat ./config/nginx.conf > /etc/nginx/secureloc.conf
+   cat ./config/nginx.conf > /etc/nginx/staticfiles.conf
 
         # Change nginx user from  "www-data" to "nginx". Not really necessary
         # because "www-data" user is created when installing PHP7.0-FPM
