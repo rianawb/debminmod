@@ -31,6 +31,11 @@ echo "Optimizing AWStats, PHP, logrotate & webserver config."
 sleep 5
 ./setup.sh optimize
 
+echo ""
+echo "Installing Phpmyadmin or Adminer."
+sleep 5
+./setup.sh dbgui
+
 ## Uncomment to secure /tmp folder
 echo ""
 echo "Securing /tmp directory."
@@ -39,5 +44,5 @@ echo "Securing /tmp directory."
 
 echo ""
 echo "Installation complete!"
-echo "Root login disabled."
+echo "Root login disabled if this option is selected."
 echo "Please add a normal user now using the \"adduser\" command."
