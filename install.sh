@@ -32,10 +32,10 @@ sleep 5
 ./setup.sh optimize
 
 ## Uncomment to secure /tmp folder
-#echo ""
-#echo "Securing /tmp directory."
+echo ""
+echo "Securing /tmp directory."
 ## Use tmpdd here if your server has under 256MB memory. Tmpdd will consume a 1GB disk space for /tmp
-#./setup.sh tmpfs
+./setup.sh tmpfs
 
 echo ""
 echo "Installation complete!"
