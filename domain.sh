@@ -85,6 +85,8 @@ function add_domain {
     # Create public_html and log directories for domain
     mkdir -p $DOMAIN_PATH/{logs,public_html}
     touch $DOMAIN_PATH/logs/{access.log,error.log}
+    # Add htpasswd file
+    htpasswd -b -c $DOMAIN_PATH/.htpasswd $DOMAIN_OWNER $DOMAIN_OWNER
 
     cat > $DOMAIN_PATH/public_html/index.html <<EOF
 <html>
@@ -93,8 +95,7 @@ function add_domain {
 </head>
 <body>
 <h1>$DOMAIN</h1>
-<p>This page is simply a placeholder for your domain. Place your content in the appropriate directory to see it here. </p>
-<p>Please replace or delete index.html when uploading or creating your site.</p>
+<p>Website is under construction.</p>
 </body>
 </html>
 EOF
@@ -115,7 +116,7 @@ server {
 
         server_name www.$DOMAIN $DOMAIN;
         root $DOMAIN_PATH/public_html;
-        access_log $DOMAIN_PATH/logs/access.log;
+        access_log $DOMAIN_PATH/logs/access.log combined buffer=256k flush=60m;
         error_log $DOMAIN_PATH/logs/error.log;
 
         index index.php index.html index.htm;
@@ -125,90 +126,103 @@ server {
             try_files \$uri \$uri/ /index.php?\$args;
         }
 
+    location ~* /(wp-login\.php) {
+        limit_req zone=xwplogin burst=1 nodelay;
+        limit_conn xwpconlimit 30;
+        auth_basic "Private";
+        auth_basic_user_file $DOMAIN_PATH/.htpasswd; 
+        fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+        include /etc/nginx/allphp.conf;
+    }
+
+    location ~* /(xmlrpc\.php) {
+        limit_req zone=xwprpc burst=45 nodelay;
+        #limit_conn xwpconlimit 30;
+        fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+        include /etc/nginx/allphp.conf;
+    }
+
         # Pass PHP scripts to PHP-FPM
         location ~ \.php$ {
-            try_files \$uri =403;
             fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
-            include fastcgi_params;
-            fastcgi_index index.php;
-            fastcgi_param SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
-            fastcgi_param PHP_ADMIN_VALUE  open_basedir=\$document_root/:/tmp/:/usr/local/share/phpmyadmin/:/usr/local/share/adminer/;
+            include /etc/nginx/allphp.conf;
         }
 
-        # Enable browser cache for CSS / JS
-        location ~* \.(?:css|js)$ {
-            expires 30d;
-            add_header Pragma "public";
-            add_header Cache-Control "public";
-            add_header Vary "Accept-Encoding";
-        }
+include /etc/nginx/secureloc.conf;
+include /etc/nginx/staticfiles.conf;
 
-        # Enable browser cache for static files
-        location ~* \.(?:ico|jpg|jpeg|gif|png|bmp|webp|tiff|svg|svgz|pdf|mp3|flac|ogg|mid|midi|wav|mp4|webm|mkv|ogv|wmv|eot|otf|woff|ttf|rss|atom|zip|7z|tgz|gz|rar|bz2|tar|exe|doc|docx|xls|xlsx|ppt|pptx|rtf|odt|ods|odp)$ {
-            expires 60d;
-            add_header Pragma "public";
-            add_header Cache-Control "public";
-        }
-
-        # Deny access to hidden files
-        location ~ (^|/)\. {
-            deny all;
-        }
-
-        # Prevent logging of favicon and robot request errors
-        location = /favicon.ico { log_not_found off; access_log off; }
-        location = /robots.txt  { log_not_found off; access_log off; }
 }
 
 
 server {
-        listen 443 ssl spdy;
+        listen 443 ssl http2;
         server_name www.$DOMAIN $DOMAIN;
         root $DOMAIN_PATH/public_html;
-        access_log $DOMAIN_PATH/logs/access.log;
+        access_log $DOMAIN_PATH/logs/access.log combined buffer=256k flush=60m;
         error_log $DOMAIN_PATH/logs/error.log;
 
         index index.php index.html index.htm;
         error_page 404 /404.html;
 
-        include /etc/nginx/ssl.conf;
+        # ssl conf
+        
+        ssl on;
+        ssl_certificate /etc/ssl/localcerts/webserver.pem;
+        ssl_certificate_key /etc/ssl/localcerts/webserver.key;
+
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 60m;
+
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+
+        # mozilla recommended
+          ssl_ciphers ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA:!CAMELLIA:!DES-CBC3-SHA;
+          ssl_prefer_server_ciphers   on;
+          #add_header Alternate-Protocol  443:npn-spdy/3;
+          #add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
+          #add_header  X-Content-Type-Options "nosniff";
+          #add_header X-Frame-Options DENY;
+          #spdy_headers_comp 5;
+          ssl_buffer_size 1400;
+          ssl_session_tickets on;
+          
+          # enable ocsp stapling
+          #resolver 8.8.8.8 8.8.4.4 valid=10m;
+          #resolver_timeout 10s;
+          #ssl_stapling on;
+          #ssl_stapling_verify on;
+          
+        # ssl conf end
 
         location / {
             try_files \$uri \$uri/ /index.php?\$args;
         }
 
+    location ~* /(wp-login\.php) {
+        limit_req zone=xwplogin burst=1 nodelay;
+        limit_conn xwpconlimit 30;
+        auth_basic "Private";
+        auth_basic_user_file $DOMAIN_PATH/.htpasswd; 
+        fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+        include /etc/nginx/allphp.conf;
+    }
+
+    location ~* /(xmlrpc\.php) {
+        limit_req zone=xwprpc burst=45 nodelay;
+        #limit_conn xwpconlimit 30;
+        fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+        include /etc/nginx/allphp.conf;
+    }
+
+        # Pass PHP scripts to PHP-FPM
         location ~ \.php$ {
-            try_files \$uri =403;
             fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
-            include fastcgi_params;
-            fastcgi_index index.php;
-            fastcgi_param SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
-            fastcgi_param PHP_ADMIN_VALUE  open_basedir=\$document_root/:/tmp/:/usr/local/share/phpmyadmin/:/usr/local/share/adminer/;
+            include /etc/nginx/allphp.conf;
         }
 
-        # Enable browser cache for CSS / JS
-        location ~* \.(?:css|js)$ {
-            expires 30d;
-            add_header Pragma "public";
-            add_header Cache-Control "public";
-            add_header Vary "Accept-Encoding";
-        }
+include /etc/nginx/secureloc.conf;
+include /etc/nginx/staticfiles.conf;
 
-        # Enable browser cache for static files
-        location ~* \.(?:ico|jpg|jpeg|gif|png|bmp|webp|tiff|svg|svgz|pdf|mp3|flac|ogg|mid|midi|wav|mp4|webm|mkv|ogv|wmv|eot|otf|woff|ttf|rss|atom|zip|7z|tgz|gz|rar|bz2|tar|exe|doc|docx|xls|xlsx|ppt|pptx|rtf|odt|ods|odp)$ {
-            expires 60d;
-            add_header Pragma "public";
-            add_header Cache-Control "public";
-        }
-
-        # Deny access to hidden files
-        location ~ (^|/)\. {
-            deny all;
-        }
-
-        # Prevent logging of favicon and robot request errors
-        location = /favicon.ico { log_not_found off; access_log off; }
-        location = /robots.txt  { log_not_found off; access_log off; }
 }
 EOF
 
