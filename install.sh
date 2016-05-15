@@ -10,6 +10,7 @@ service sendmail stop
 service bind9 stop
 service nscd stop
 aptitude -y purge nscd bind9 sendmail apache2 apache2.2-common 
+aptitude -y install apache2-utils
 
 echo ""
 echo "Configuring /etc/apt/sources.list."
