@@ -122,9 +122,11 @@ function new_or_existing_domain {
 
     if [[ "$ADD_DOMAIN" = 2 ]]; then
         echo "Please enter the domain you wish to add. Format is domain.tld."
+        echo -n "User : "
+        read USER_TO_BE_ADDED
         echo -n "Domain : "
         read DOMAIN_TO_BE_ADDED
-        `/root/domainsetup.sh add $DOMAIN_TO_BE_ADDED &> /dev/null`
+        `/root/debminmod/domain.sh add $USER_TO_BE_ADDED $DOMAIN_TO_BE_ADDED &> /dev/null`
     fi
 
 } # End function new_or_existing_domain
