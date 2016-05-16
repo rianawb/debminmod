@@ -59,9 +59,6 @@ kindly refer to these links:-
     ./domain.sh add johndoe yourdomain.com
     ./domain.sh add johndoe subdomain.yourdomain.com
     
-    # Install Adminer or phpMyAdmin
-    ./setup.sh dbgui
-    
     # Enable/disable public viewing of Adminer/phpMyAdmin
     ./domain.sh dbgui on
     ./domain.sh dbgui off
