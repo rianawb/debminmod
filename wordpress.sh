@@ -79,7 +79,7 @@ function get_latest_wordpress {
 function add_mysqldb_and_user {
 
     # Form SQL query string
-    Q1="CREATE DATABASE IF NOT EXISTS $DB_NAME;"
+    Q1="CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT COLLATE utf8_general_ci;"
     Q2="GRANT ALL ON $DB_NAME.* TO '$DB_USER'@'localhost' IDENTIFIED BY '$DB_USER_PASS';"
     Q3="FLUSH PRIVILEGES;"
     SQL="${Q1}${Q2}${Q3}"
