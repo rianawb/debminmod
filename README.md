@@ -39,13 +39,19 @@ kindly refer to these links:-
 
 ### Quick Install (Git)
 
-    # Install git and clone TuxLite
-    aptitude install git
+    # Install git & tools
+    apt-get install git mc screen zip unzip -y
+    
+    # Use screen for uninterrupted flow
+    screen
+    
+    # Clone Debminmod
     git clone https://github.com/isolms/debminmod.git
     cd debminmod
     
     # Edit options to enter server IP, MySQL password etc.
     nano options.conf
+    # Save file after changes
     
     # Make all scripts executable.
     chmod 700 *.sh
@@ -86,7 +92,7 @@ reading the "getting started" tutorials in Linode Library.
 -   Minimal resource usage. Fresh install requires only 50-60MB RAM.
 -   Free from unnecessary or custom changes to your server. Everything
     is configured according to Debian/Ubuntu standards.
--   Automatic virtualhost configuration with log rotationand phpMyAdmin for managing MySQL.
+-   Automatic virtualhost configuration with log rotation and phpMyAdmin for managing MySQL.
 -   Varnish cache script included to turbo charge your websites.
 -   Free and open source! Coded in a human readable manner and
     modular, making custom modifications extremely easy.
