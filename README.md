@@ -46,7 +46,7 @@ kindly refer to these links:-
     screen
     
     # Clone Debminmod
-    git clone https://github.com/isolms/debminmod.git
+    git clone https://github.com/rianawb/debminmod.git
     cd debminmod
     
     # Edit options to enter server IP, MySQL password etc.
