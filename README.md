@@ -24,7 +24,7 @@ The following are installed:-
 
 -   Nginx (Mainline)
 -   MySQL, MariaDB or Percona
--   PHP7.0-FPM + commonly used PHP modules
+-   php7.2-FPM + commonly used PHP modules
 -   Postfix mail server (securely configured to be outgoing only)
 -   Varnish cache (optional)
 
