@@ -60,18 +60,18 @@ function reload_webserver {
 function php_fpm_add_user {
 
     # Copy over FPM template for this Linux user if it doesn't exist
-    if [ ! -e /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf ]; then
-        cp /etc/php/7.0/fpm/pool.d/{www.conf,$DOMAIN_OWNER.conf}
+    if [ ! -e /etc/php/7.2/fpm/pool.d/$DOMAIN_OWNER.conf ]; then
+        cp /etc/php/7.2/fpm/pool.d/{www.conf,$DOMAIN_OWNER.conf}
 
         # Change pool user, group and socket to the domain owner
-        sed -i 's/^\[www\]$/\['${DOMAIN_OWNER}'\]/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^listen =.*/listen = \/var\/run\/php\/php7.2-fpm-'${DOMAIN_OWNER}'.sock/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^user = www-data$/user = '${DOMAIN_OWNER}'/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^group = www-data$/group = '${DOMAIN_OWNER}'/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^;listen.mode =.*/listen.mode = 0666/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^\[www\]$/\['${DOMAIN_OWNER}'\]/' /etc/php/7.2/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^listen =.*/listen = \/var\/run\/php\/php7.2-fpm-'${DOMAIN_OWNER}'.sock/' /etc/php/7.2/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^user = www-data$/user = '${DOMAIN_OWNER}'/' /etc/php/7.2/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^group = www-data$/group = '${DOMAIN_OWNER}'/' /etc/php/7.2/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^;listen.mode =.*/listen.mode = 0666/' /etc/php/7.2/fpm/pool.d/$DOMAIN_OWNER.conf
 
-        sed -i 's/^;listen.owner =.*/listen.owner = nginx/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^;listen.group =.*/listen.group = nginx/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^;listen.owner =.*/listen.owner = nginx/' /etc/php/7.2/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^;listen.group =.*/listen.group = nginx/' /etc/php/7.2/fpm/pool.d/$DOMAIN_OWNER.conf
 
     fi
 
