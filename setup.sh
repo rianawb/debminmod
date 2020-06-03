@@ -298,7 +298,7 @@ function optimize_stack {
 
 
     service php7.2-fpm stop
-    php_fpm_conf="/etc/php/7.0/fpm/pool.d/www.conf"
+    php_fpm_conf="/etc/php/7.2/fpm/pool.d/www.conf"
     # Limit FPM processes
     sed -i 's/^pm.max_children.*/pm.max_children = '${FPM_MAX_CHILDREN}'/' $php_fpm_conf
     sed -i 's/^pm.start_servers.*/pm.start_servers = '${FPM_START_SERVERS}'/' $php_fpm_conf
@@ -308,7 +308,7 @@ function optimize_stack {
     # Change to socket connection for better performance
     sed -i 's/^listen =.*/listen = \/var\/run\/php\/php7.2-fpm.sock/' $php_fpm_conf
 
-    php_ini_dir="/etc/php/7.0/fpm/php.ini"
+    php_ini_dir="/etc/php/7.2/fpm/php.ini"
     # Tweak php.ini based on input in options.conf
     sed -i 's/^max_execution_time.*/max_execution_time = '${PHP_MAX_EXECUTION_TIME}'/' $php_ini_dir
     sed -i 's/^memory_limit.*/memory_limit = '${PHP_MEMORY_LIMIT}'/' $php_ini_dir
