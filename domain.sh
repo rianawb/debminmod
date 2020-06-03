@@ -2,7 +2,7 @@
 ######################################################################
 # TuxLite virtualhost script                                         #
 # Easily add/remove domains or subdomains                            #
-# Configures logrotate and PHP7.0-FPM                         #
+# Configures logrotate and php7.2-FPM                         #
 # Enables/disables Adminer/phpMyAdmin  #
 ######################################################################
 
@@ -65,7 +65,7 @@ function php_fpm_add_user {
 
         # Change pool user, group and socket to the domain owner
         sed -i 's/^\[www\]$/\['${DOMAIN_OWNER}'\]/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
-        sed -i 's/^listen =.*/listen = \/var\/run\/php\/php7.0-fpm-'${DOMAIN_OWNER}'.sock/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
+        sed -i 's/^listen =.*/listen = \/var\/run\/php\/php7.2-fpm-'${DOMAIN_OWNER}'.sock/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
         sed -i 's/^user = www-data$/user = '${DOMAIN_OWNER}'/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
         sed -i 's/^group = www-data$/group = '${DOMAIN_OWNER}'/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
         sed -i 's/^;listen.mode =.*/listen.mode = 0666/' /etc/php/7.0/fpm/pool.d/$DOMAIN_OWNER.conf
@@ -75,7 +75,7 @@ function php_fpm_add_user {
 
     fi
 
-    service php7.0-fpm restart
+    service php7.2-fpm restart
 
 } # End function php_fpm_add_user
 
@@ -131,20 +131,20 @@ server {
         limit_conn xwpconlimit 30;
         auth_basic "Private";
         auth_basic_user_file $DOMAIN_PATH/.htpasswd; 
-        fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+        fastcgi_pass unix:/var/run/php/php7.2-fpm-$DOMAIN_OWNER.sock;
         include /etc/nginx/allphp.conf;
     }
 
     location ~* /(xmlrpc\.php) {
         limit_req zone=xwprpc burst=45 nodelay;
         #limit_conn xwpconlimit 30;
-        fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+        fastcgi_pass unix:/var/run/php/php7.2-fpm-$DOMAIN_OWNER.sock;
         include /etc/nginx/allphp.conf;
     }
 
         # Pass PHP scripts to PHP-FPM
         location ~ \.php$ {
-            fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+            fastcgi_pass unix:/var/run/php/php7.2-fpm-$DOMAIN_OWNER.sock;
             include /etc/nginx/allphp.conf;
         }
 
@@ -203,20 +203,20 @@ server {
         limit_conn xwpconlimit 30;
         auth_basic "Private";
         auth_basic_user_file $DOMAIN_PATH/.htpasswd; 
-        fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+        fastcgi_pass unix:/var/run/php/php7.2-fpm-$DOMAIN_OWNER.sock;
         include /etc/nginx/allphp.conf;
     }
 
     location ~* /(xmlrpc\.php) {
         limit_req zone=xwprpc burst=45 nodelay;
         #limit_conn xwpconlimit 30;
-        fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+        fastcgi_pass unix:/var/run/php/php7.2-fpm-$DOMAIN_OWNER.sock;
         include /etc/nginx/allphp.conf;
     }
 
         # Pass PHP scripts to PHP-FPM
         location ~ \.php$ {
-            fastcgi_pass unix:/var/run/php/php7.0-fpm-$DOMAIN_OWNER.sock;
+            fastcgi_pass unix:/var/run/php/php7.2-fpm-$DOMAIN_OWNER.sock;
             include /etc/nginx/allphp.conf;
         }
 
